@@ -3075,6 +3075,77 @@ langBtn.addEventListener('click',()=>{langBtn.textContent=langBtn.textContent.in
     </script>
 
 
+
+<style id="pf-admin-carousel-style">
+#pf-carousel-admin-open{position:fixed;right:14px;bottom:58px;z-index:9998;border:1px solid rgba(167,255,69,.65);background:rgba(2,12,8,.92);color:#caff45;padding:9px 12px;border-radius:10px;font:700 10px Orbitron,Arial,sans-serif;cursor:pointer;opacity:.62}
+#pf-carousel-admin-open:hover{opacity:1;box-shadow:0 0 18px #a7ff4533}
+#pf-carousel-admin-overlay{display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);padding:16px;overflow:auto}
+#pf-carousel-admin-overlay.open{display:flex;align-items:flex-start;justify-content:center}
+#pf-carousel-admin{width:min(720px,100%);margin:auto;background:#07140e;color:#f5fff8;border:1px solid #a7ff4566;border-radius:16px;padding:20px;box-shadow:0 20px 80px #000b;font-family:Arial,sans-serif}
+#pf-carousel-admin h2{font:800 19px Orbitron,Arial,sans-serif;color:#caff45;margin:0 0 8px}
+#pf-carousel-admin p{font-size:12px;line-height:1.5;color:#b5c8bd}
+#pf-carousel-admin .pfca-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+#pf-carousel-admin label{display:block;font-size:10px;letter-spacing:.05em;color:#b5c8bd;margin:8px 0 5px}
+#pf-carousel-admin input,#pf-carousel-admin select{box-sizing:border-box;width:100%;min-width:0;padding:10px;border:1px solid #244b37;border-radius:8px;background:#020906;color:#f8fbfa;font-size:13px}
+#pf-carousel-admin .pfca-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+#pf-carousel-admin button{border:1px solid #31533e;border-radius:8px;padding:10px 13px;cursor:pointer;font-weight:800}
+#pfca-save{background:linear-gradient(100deg,#dfff35,#24ff82);color:#06120a;border:0!important}
+#pfca-close,#pfca-clear{background:#10251a;color:#e7fff0}
+#pfca-status{min-height:18px;margin-top:12px;color:#a7ff45;font-size:12px}
+#pfca-list{margin-top:12px;padding-left:20px;color:#d9f5e2;font-size:12px;line-height:1.8}
+@media(max-width:520px){#pf-carousel-admin .pfca-grid{grid-template-columns:1fr}#pf-carousel-admin{padding:15px}}
+</style>
+<button id="pf-carousel-admin-open" type="button" title="Administrar partidos del carrusel">⚙ ADMIN PARTIDOS</button>
+<div id="pf-carousel-admin-overlay" aria-hidden="true"><section id="pf-carousel-admin" role="dialog" aria-modal="true" aria-labelledby="pfca-title">
+<button id="pfca-close" type="button" style="float:right">CERRAR ✕</button>
+<h2 id="pfca-title">PORYFUT · CARRUSEL</h2>
+<p>Agrega un partido con sus escudos y probabilidades. Se muestran hasta 4 partidos; al guardar el quinto, se reemplaza automáticamente el más antiguo. Los porcentajes deben sumar 100%. Para publicar se requiere iniciar sesión con tu usuario administrador de Supabase.</p>
+<div class="pfca-grid" style="margin-bottom:14px">
+<div><label for="pfca-email">CORREO DE ADMINISTRADOR</label><input id="pfca-email" type="email" autocomplete="username" placeholder="Tu correo de Supabase"></div>
+<div><label for="pfca-password">CONTRASEÑA</label><input id="pfca-password" type="password" autocomplete="current-password" placeholder="Contraseña de administrador"></div>
+</div><div class="pfca-actions" style="margin-top:0"><button id="pfca-login" type="button" class="pfca-clear">INICIAR SESIÓN</button><button id="pfca-logout" type="button" class="pfca-clear">CERRAR SESIÓN</button></div>
+<div class="pfca-grid">
+<div><label for="pfca-home">CLUB LOCAL (elige o escribe)</label><input id="pfca-home" list="pfca-clubs" placeholder="Ej. Real Madrid" maxlength="50"></div>
+<div><label for="pfca-away">CLUB VISITANTE (elige o escribe)</label><input id="pfca-away" list="pfca-clubs" placeholder="Ej. Barcelona" maxlength="50"></div>
+<div><label for="pfca-home-logo">URL DEL ESCUDO/CAMISETA LOCAL</label><input id="pfca-home-logo" type="url" placeholder="https://..."></div>
+<div><label for="pfca-away-logo">URL DEL ESCUDO/CAMISETA VISITANTE</label><input id="pfca-away-logo" type="url" placeholder="https://..."></div>
+<div><label for="pfca-league">LIGA / TEXTO DEL PARTIDO</label><input id="pfca-league" placeholder="Ej. LIGA MX · JORNADA 12" maxlength="60"></div>
+<div><label for="pfca-date">FECHA (opcional)</label><input id="pfca-date" placeholder="Ej. HOY" maxlength="24"></div>
+<div><label for="pfca-ph">PROBABILIDAD LOCAL (%)</label><input id="pfca-ph" type="number" min="0" max="100" step="0.1" value="45"></div>
+<div><label for="pfca-pd">PROBABILIDAD EMPATE (%)</label><input id="pfca-pd" type="number" min="0" max="100" step="0.1" value="27"></div>
+<div><label for="pfca-pa">PROBABILIDAD VISITANTE (%)</label><input id="pfca-pa" type="number" min="0" max="100" step="0.1" value="28"></div>
+</div>
+<datalist id="pfca-clubs">
+<option value="América"><option value="Chivas"><option value="Cruz Azul"><option value="Pumas"><option value="Monterrey"><option value="Tigres"><option value="Toluca"><option value="Pachuca"><option value="Real Madrid"><option value="Barcelona"><option value="Atlético de Madrid"><option value="Manchester City"><option value="Arsenal"><option value="Liverpool"><option value="Manchester United"><option value="Chelsea"><option value="Bayern Múnich"><option value="Borussia Dortmund"><option value="Inter"><option value="AC Milan"><option value="Juventus"><option value="Napoli"><option value="PSG"><option value="Marseille"><option value="LA Galaxy"><option value="Inter Miami">
+</datalist>
+<div class="pfca-actions"><button id="pfca-save" type="button">GUARDAR Y PUBLICAR</button><button id="pfca-clear" type="button">LIMPIAR FORMULARIO</button></div>
+<div id="pfca-status" role="status"></div><ol id="pfca-list"></ol>
+</section></div>
+<script id="pf-admin-carousel-script">
+(function(){
+ const $=id=>document.getElementById(id); const overlay=$('pf-carousel-admin-overlay');
+ const url=v=>{try{const u=new URL(String(v||'').trim());return u.protocol==='https:'?u.href:''}catch(e){return ''}};
+ const client=()=>{if(!window.supabase?.createClient)throw new Error('No se pudo cargar la conexión de Supabase.');return window.supabase.createClient('https://swzkzcolwbqkkcpiavae.supabase.co','sb_publishable_rwklpjmWZyM9rpumvM75MQ_JDfk1AQG')};
+ const msg=(t,err=false)=>{$('pfca-status').textContent=t;$('pfca-status').style.color=err?'#ff8585':'#a7ff45'};
+ function open(){overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');refreshList()}
+ function close(){overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true')}
+ async function refreshList(){try{const {data,error}=await client().from('poryfut_featured_matches').select('home,away,sort_order,updated_at,active').eq('active',true).order('sort_order',{ascending:true}).limit(4);if(error)throw error;$('pfca-list').innerHTML='';(data||[]).forEach(m=>{const li=document.createElement('li');li.textContent=m.home+' vs '+m.away;$('pfca-list').appendChild(li)});if(!(data||[]).length){const li=document.createElement('li');li.textContent='Todavía no hay partidos publicados en la base de datos.';$('pfca-list').appendChild(li)}}catch(e){$('pfca-list').innerHTML='';msg('No se pudo consultar la lista. Revisa permisos/conexión de Supabase: '+e.message,true)}}
+ $('pf-carousel-admin-open').addEventListener('click',open);$('pfca-close').addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close()});document.addEventListener('keydown',e=>{if(e.key==='Escape')close();if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='m'){e.preventDefault();open()}});
+ $('pfca-login').addEventListener('click',async()=>{try{const email=$('pfca-email').value.trim(),password=$('pfca-password').value;if(!email||!password){msg('Escribe tu correo y contraseña de administrador.',true);return}const {data,error}=await client().auth.signInWithPassword({email,password});if(error)throw error;msg('Sesión de administrador iniciada. Ya puedes publicar.');await refreshList()}catch(e){msg('No se pudo iniciar sesión: '+e.message,true)}});
+ $('pfca-logout').addEventListener('click',async()=>{try{const {error}=await client().auth.signOut();if(error)throw error;msg('Sesión cerrada.')}catch(e){msg('No se pudo cerrar sesión: '+e.message,true)}});
+ $('pfca-clear').addEventListener('click',()=>{['pfca-home','pfca-away','pfca-home-logo','pfca-away-logo','pfca-league','pfca-date'].forEach(id=>$(id).value='');$('pfca-ph').value=45;$('pfca-pd').value=27;$('pfca-pa').value=28;msg('Formulario limpio.')});
+ $('pfca-save').addEventListener('click',async()=>{const home=$('pfca-home').value.trim(),away=$('pfca-away').value.trim(),home_logo=url($('pfca-home-logo').value),away_logo=url($('pfca-away-logo').value),league=$('pfca-league').value.trim()||'PRONÓSTICO PORYFUT',date=$('pfca-date').value.trim()||'HOY',p_home=Number($('pfca-ph').value),p_draw=Number($('pfca-pd').value),p_away=Number($('pfca-pa').value);if(!home||!away){msg('Elige o escribe los dos clubes.',true);return}if(!home_logo||!away_logo){msg('Pega una URL HTTPS válida para los dos escudos o camisetas.',true);return}if([p_home,p_draw,p_away].some(v=>!Number.isFinite(v)||v<0||v>100)||Math.abs(p_home+p_draw+p_away-100)>0.11){msg('Las tres probabilidades deben sumar 100%.',true);return}
+ const btn=$('pfca-save');btn.disabled=true;btn.textContent='PUBLICANDO…';
+ try{const db=client();const {data:sessionData}=await db.auth.getSession();if(!sessionData?.session){throw new Error('Inicia sesión primero con el usuario administrador de Supabase.')}let {data:rows,error}=await db.from('poryfut_featured_matches').select('id,sort_order,updated_at').eq('active',true).order('sort_order',{ascending:true}).limit(20);if(error)throw error;rows=rows||[];
+ // FIFO: si ya hay cuatro, desactivar el partido más antiguo antes de añadir el nuevo.
+ if(rows.length>=4){const oldest=[...rows].sort((a,b)=>{const ta=Date.parse(a.updated_at||0)||0,tb=Date.parse(b.updated_at||0)||0;return ta-tb||(Number(a.sort_order)||0)-(Number(b.sort_order)||0)})[0];const {error:de}=await db.from('poryfut_featured_matches').update({active:false}).eq('id',oldest.id);if(de)throw de;}
+ const {data:remaining,error:re}=await db.from('poryfut_featured_matches').select('sort_order').eq('active',true).order('sort_order',{ascending:false}).limit(1);if(re)throw re;const sort_order=remaining&&remaining.length?(Number(remaining[0].sort_order)||0)+1:1;
+ const payload={league,date,home,away,home_logo,away_logo,p_home,p_draw,p_away,sort_order,active:true};const {error:ie}=await db.from('poryfut_featured_matches').insert(payload);if(ie)throw ie;
+ msg('¡Publicado! El carrusel se actualizará con el nuevo partido y sus barras de porcentajes.');['pfca-home','pfca-away','pfca-home-logo','pfca-away-logo','pfca-league','pfca-date'].forEach(id=>$(id).value='');await refreshList();window.dispatchEvent(new Event('focus'));
+ }catch(e){console.error('[PoryFut admin]',e);msg('No se pudo guardar: '+e.message+'. Revisa la migración de columnas y los permisos RLS de Supabase.',true)}finally{btn.disabled=false;btn.textContent='GUARDAR Y PUBLICAR'}});
+})();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script id="pf-wheel-supabase-live">
 (function(){
@@ -3152,7 +3223,7 @@ langBtn.addEventListener('click',()=>{langBtn.textContent=langBtn.textContent.in
     try{
       if(!window.supabase||!window.supabase.createClient)throw new Error('No cargó el cliente de conexión.');
       const client=window.supabase.createClient('https://swzkzcolwbqkkcpiavae.supabase.co','sb_publishable_rwklpjmWZyM9rpumvM75MQ_JDfk1AQG');
-      const {data,error}=await client.from('poryfut_featured_matches').select('id,league,date,home,away,home_logo,away_logo,p_home,p_draw,p_away,sort_order,active,updated_at').eq('active',true).order('sort_order',{ascending:true}).limit(20);
+      const {data,error}=await client.from('poryfut_featured_matches').select('id,league,date,home,away,home_logo,away_logo,p_home,p_draw,p_away,sort_order,active,updated_at').eq('active',true).order('sort_order',{ascending:true}).limit(4);
       if(error)throw error;
       matches=(data||[]).filter(m=>m.home&&m.away&&Number.isFinite(Number(m.p_home))&&Number.isFinite(Number(m.p_draw))&&Number.isFinite(Number(m.p_away)));
       if(!matches.length){allCards.forEach(c=>c.style.display='none');setStatus('AÚN NO HAY PARTIDOS ACTIVOS PUBLICADOS.');return;}
