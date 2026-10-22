@@ -3075,28 +3075,78 @@ langBtn.addEventListener('click',()=>{langBtn.textContent=langBtn.textContent.in
     </script>
 
 
-<script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script id="pf-wheel-supabase-live">
 (function(){
-  const root=document.querySelector('.pf-match-wheel');if(!root)return;
-  const cards=Array.from(root.querySelectorAll('.pf-wheel-card'));
-  const matches=[
-    {title:'REAL MADRID <b>VS</b> BARCELONA',short:'PARTIDO 01 / 04',p:[42,27,31]},
-    {title:'MANCHESTER CITY <b>VS</b> ARSENAL',short:'PARTIDO 02 / 04',p:[39,28,33]},
-    {title:'INTER <b>VS</b> AC MILAN',short:'PARTIDO 03 / 04',p:[46,29,25]},
-    {title:'MONTERREY <b>VS</b> TIGRES',short:'PARTIDO 04 / 04',p:[36,30,34]}
+  const root=document.querySelector('.pf-match-wheel'); if(!root) return;
+  const stage=root.querySelector('#pf-wheel-stage');
+  const allCards=Array.from(root.querySelectorAll('.pf-wheel-card'));
+  const status=document.createElement('div');
+  status.id='pf-wheel-live-status';
+  status.setAttribute('role','status');
+  status.style.cssText='text-align:center;font-size:10px;letter-spacing:.08em;color:#a7ff45;min-height:14px;margin:0 auto 8px;max-width:95%;';
+  const controls=root.querySelector('.pf-wheel-controls');
+  if(controls) controls.insertAdjacentElement('afterend',status);
+  const positions=[
+    {x:0,y:0,z:120,scale:1.18,rot:0,opacity:1},
+    {x:218,y:8,z:-20,scale:.91,rot:-43,opacity:1},
+    {x:0,y:25,z:-150,scale:.68,rot:0,opacity:.42},
+    {x:-218,y:8,z:-20,scale:.91,rot:43,opacity:1}
   ];
-  let active=0, startX=null;
-  const positions=[{x:0,y:0,z:105,scale:1.12,rot:0,opacity:1},{x:218,y:8,z:-25,scale:.88,rot:-42,opacity:.96},{x:0,y:26,z:-155,scale:.66,rot:0,opacity:.34},{x:-218,y:8,z:-25,scale:.88,rot:42,opacity:.96}];
-  function render(){
-    cards.forEach((card,i)=>{const rel=(i-active+4)%4, p=positions[rel];card.style.transform=`translate3d(calc(-50% + ${p.x}px),calc(-50% + ${p.y}px),${p.z}px) rotateY(${p.rot}deg) rotateX(3deg) scale(${p.scale})`;card.style.zIndex=p.z;card.style.opacity=p.opacity;card.classList.toggle('is-active',i===active);card.setAttribute('aria-pressed',i===active?'true':'false');});
-    const m=matches[active];root.querySelector('#pf-wheel-counter').textContent=m.short;root.querySelector('#pf-wheel-picked-title').innerHTML=m.title;
-    ['home','draw','away'].forEach((key,i)=>{root.querySelector('#pf-wheel-'+key+'-label').textContent=m.p[i]+'%';root.querySelector('#pf-wheel-'+key+'-bar').style.width=m.p[i]+'%';});
+  let matches=[], active=0, startX=null;
+  const setStatus=(msg,err=false)=>{status.textContent=msg;status.style.color=err?'#ff7777':'#a7ff45';};
+  const shortName=(v)=>String(v||'').trim();
+  const initials=(v)=>shortName(v).split(/\s+/).filter(Boolean).slice(0,2).map(x=>x.slice(0,3)).join('').toUpperCase()||'FC';
+  function setCard(card,m,i){
+    card.innerHTML=''; card.dataset.match=String(i); card.disabled=false;
+    const round=document.createElement('span');round.className='pf-wheel-round';round.textContent=String(i+1).padStart(2,'0');card.appendChild(round);
+    const teams=document.createElement('div');teams.className='pf-wheel-teams';
+    const home=document.createElement('span');home.className='pf-team pf-team-text';const hb=document.createElement('b');hb.textContent=initials(m.home);home.appendChild(hb);
+    const vs=document.createElement('span');vs.className='pf-wheel-vs';vs.textContent='VS';
+    const away=document.createElement('span');away.className='pf-team pf-team-text';const ab=document.createElement('b');ab.textContent=initials(m.away);away.appendChild(ab);
+    teams.append(home,vs,away);card.appendChild(teams);
+    const small=document.createElement('small');small.textContent=shortName(m.league)||'PRONÓSTICO PORYFUT';card.appendChild(small);
+    card.setAttribute('aria-label','Seleccionar '+m.home+' contra '+m.away);
+    card.onclick=()=>{active=i;render();};
   }
-  function move(step){active=(active+step+4)%4;render()}
-  cards.forEach((card,i)=>card.addEventListener('click',()=>{active=i;render()}));
-  root.querySelector('#pf-wheel-prev').addEventListener('click',()=>move(-1));root.querySelector('#pf-wheel-next').addEventListener('click',()=>move(1));
-  const stage=root.querySelector('#pf-wheel-stage');stage.addEventListener('pointerdown',e=>{startX=e.clientX});stage.addEventListener('pointerup',e=>{if(startX===null)return;const dx=e.clientX-startX;if(Math.abs(dx)>35)move(dx<0?1:-1);startX=null});
-  render();
+  function render(){
+    const n=matches.length;
+    allCards.forEach((card,i)=>{
+      if(i>=n){card.style.display='none';return;}
+      card.style.display='';
+      const rel=(i-active+n)%n; const p=positions[Math.min(rel,3)];
+      card.style.transform=`translate3d(calc(-50% + ${p.x}px),calc(-50% + ${p.y}px),${p.z}px) rotateY(${p.rot}deg) rotateX(3deg) scale(${p.scale})`;
+      card.style.zIndex=String(p.z+200);card.style.opacity=String(p.opacity);
+      card.classList.toggle('is-active',i===active);card.setAttribute('aria-pressed',i===active?'true':'false');
+    });
+    const m=matches[active]; if(!m)return;
+    const counter=root.querySelector('#pf-wheel-counter'); if(counter) counter.textContent=`PARTIDO ${String(active+1).padStart(2,'0')} / ${String(n).padStart(2,'0')}`;
+    const title=root.querySelector('#pf-wheel-picked-title'); if(title) title.textContent=`${m.home} VS ${m.away}`;
+    const sub=root.querySelector('.pf-wheel-picked small');if(sub)sub.textContent='PROBABILIDADES DEL MODELO PREDADICTION';
+    [['home',m.p_home],['draw',m.p_draw],['away',m.p_away]].forEach(([key,val])=>{
+      const label=root.querySelector('#pf-wheel-'+key+'-label'),bar=root.querySelector('#pf-wheel-'+key+'-bar');
+      const v=Number(val)||0;if(label)label.textContent=(Math.round(v*100)/100).toLocaleString('es-MX',{maximumFractionDigits:2})+'%';if(bar)bar.style.width=Math.max(0,Math.min(100,v))+'%';
+    });
+  }
+  function move(step){if(!matches.length)return;active=(active+step+matches.length)%matches.length;render();}
+  const prev=root.querySelector('#pf-wheel-prev'),next=root.querySelector('#pf-wheel-next');
+  if(prev)prev.addEventListener('click',()=>move(-1));if(next)next.addEventListener('click',()=>move(1));
+  if(stage){stage.addEventListener('pointerdown',e=>{startX=e.clientX;});stage.addEventListener('pointerup',e=>{if(startX===null)return;const dx=e.clientX-startX;if(Math.abs(dx)>35)move(dx<0?1:-1);startX=null;});}
+  async function loadMatches(){
+    try{
+      if(!window.supabase||!window.supabase.createClient)throw new Error('No cargó el cliente de conexión.');
+      const client=window.supabase.createClient('https://swzkzcolwbqkkcpiavae.supabase.co','sb_publishable_rwklpjmWZyM9rpumvM75MQ_JDfk1AQG');
+      const {data,error}=await client.from('poryfut_featured_matches').select('id,league,date,home,away,p_home,p_draw,p_away,sort_order,active,updated_at').eq('active',true).order('sort_order',{ascending:true}).limit(20);
+      if(error)throw error;
+      matches=(data||[]).filter(m=>m.home&&m.away&&Number.isFinite(Number(m.p_home))&&Number.isFinite(Number(m.p_draw))&&Number.isFinite(Number(m.p_away)));
+      if(!matches.length){allCards.forEach(c=>c.style.display='none');setStatus('AÚN NO HAY PARTIDOS ACTIVOS PUBLICADOS.');return;}
+      matches.forEach((m,i)=>{if(allCards[i])setCard(allCards[i],m,i);});
+      active=0;render();setStatus(`${matches.length} PARTIDO${matches.length===1?'':'S'} PUBLICADO${matches.length===1?'':'S'} · DATOS EN VIVO`);
+    }catch(e){console.error('[PoryFut Match Wheel]',e);setStatus('NO SE PUDIERON CARGAR LOS PARTIDOS · '+(e.message||'Revisa permisos de Supabase'),true);}
+  }
+  loadMatches();
+  // Actualiza si el administrador publica cambios sin exigir recargar toda la página.
+  window.addEventListener('focus',loadMatches);
 })();
 </script>
 
