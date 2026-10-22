@@ -3108,11 +3108,15 @@ langBtn.addEventListener('click',()=>{langBtn.textContent=langBtn.textContent.in
     const round=document.createElement('span');round.className='pf-wheel-round';round.textContent=String(i+1).padStart(2,'0');card.appendChild(round);
     const teams=document.createElement('div');teams.className='pf-wheel-teams pf-wheel-kit-teams';
     // Espacios visuales reservados para escudos o camisetas. Las iniciales funcionan como marcador temporal.
-    const home=document.createElement('span');home.className='pf-team pf-team-text pf-wheel-kit-slot';home.setAttribute('aria-label','Espacio para escudo o camiseta de '+m.home);
-    const hb=document.createElement('b');hb.textContent=initials(m.home);home.appendChild(hb);
+    const makeTeamBadge=(name,logo)=>{
+      const badge=document.createElement('span');badge.className='pf-team pf-team-text pf-wheel-kit-slot';badge.setAttribute('aria-label','Escudo de '+name);
+      if(logo){const img=document.createElement('img');img.src=logo;img.alt='Escudo '+name;img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>{img.remove();const fallback=document.createElement('b');fallback.textContent=initials(name);badge.appendChild(fallback);};badge.appendChild(img);}
+      else {const fallback=document.createElement('b');fallback.textContent=initials(name);badge.appendChild(fallback);}
+      return badge;
+    };
+    const home=makeTeamBadge(m.home,m.home_logo||m.logos?.home);
     const vs=document.createElement('span');vs.className='pf-wheel-vs';vs.textContent='VS';
-    const away=document.createElement('span');away.className='pf-team pf-team-text pf-wheel-kit-slot';away.setAttribute('aria-label','Espacio para escudo o camiseta de '+m.away);
-    const ab=document.createElement('b');ab.textContent=initials(m.away);away.appendChild(ab);
+    const away=makeTeamBadge(m.away,m.away_logo||m.logos?.away);
     teams.append(home,vs,away);card.appendChild(teams);
     const small=document.createElement('small');small.textContent=shortName(m.league)||'PRONÓSTICO PORYFUT';card.appendChild(small);
     card.setAttribute('aria-label','Seleccionar '+m.home+' contra '+m.away);
@@ -3148,7 +3152,7 @@ langBtn.addEventListener('click',()=>{langBtn.textContent=langBtn.textContent.in
     try{
       if(!window.supabase||!window.supabase.createClient)throw new Error('No cargó el cliente de conexión.');
       const client=window.supabase.createClient('https://swzkzcolwbqkkcpiavae.supabase.co','sb_publishable_rwklpjmWZyM9rpumvM75MQ_JDfk1AQG');
-      const {data,error}=await client.from('poryfut_featured_matches').select('id,league,date,home,away,p_home,p_draw,p_away,sort_order,active,updated_at').eq('active',true).order('sort_order',{ascending:true}).limit(20);
+      const {data,error}=await client.from('poryfut_featured_matches').select('id,league,date,home,away,home_logo,away_logo,p_home,p_draw,p_away,sort_order,active,updated_at').eq('active',true).order('sort_order',{ascending:true}).limit(20);
       if(error)throw error;
       matches=(data||[]).filter(m=>m.home&&m.away&&Number.isFinite(Number(m.p_home))&&Number.isFinite(Number(m.p_draw))&&Number.isFinite(Number(m.p_away)));
       if(!matches.length){allCards.forEach(c=>c.style.display='none');setStatus('AÚN NO HAY PARTIDOS ACTIVOS PUBLICADOS.');return;}
