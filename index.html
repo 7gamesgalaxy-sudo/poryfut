@@ -3067,7 +3067,36 @@ langBtn.addEventListener('click',()=>{langBtn.textContent=langBtn.textContent.in
                  $('pf-admin-open').addEventListener('click',open);$('pf-admin-close').addEventListener('click',close);
                  $('pf-admin-overlay').addEventListener('click',e=>{if(e.target===$('pf-admin-overlay'))close()});
                  document.addEventListener('keydown',e=>{if(e.key==='Escape')close();if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='p'){e.preventDefault();open()}});
-                 $('pf-admin-save').addEventListener('click',()=>{const d=readForm();if(!d.home||!d.away){$('pf-admin-status').textContent='Escribe los nombres de ambos equipos.';return}if(!d.homeLogo||!d.awayLogo){$('pf-admin-status').textContent='Las URL de los escudos deben ser direcciones HTTPS válidas.';return}if([d.pHome,d.pDraw,d.pAway].some(n=>!Number.isFinite(n)||n<0||n>100)||Math.round(d.pHome)+Math.round(d.pDraw)+Math.round(d.pAway)!==100){$('pf-admin-status').textContent='Las tres probabilidades deben sumar exactamente 100%.';return}try{localStorage.setItem(KEY,JSON.stringify(d));apply(d);$('pf-admin-status').textContent='Vista actualizada y guardada en este navegador.'}catch(e){$('pf-admin-status').textContent='No se pudo guardar en el navegador.'}});
+                 $('pf-admin-save').addEventListener('click',async()=>{
+                  const d=readForm(),status=$('pf-admin-status'),btn=$('pf-admin-save');
+                  if(!d.home||!d.away){status.textContent='Escribe los nombres de ambos equipos.';return}
+                  if(!d.homeLogo||!d.awayLogo){status.textContent='Las URL de los escudos deben ser direcciones HTTPS válidas.';return}
+                  if([d.pHome,d.pDraw,d.pAway].some(n=>!Number.isFinite(n)||n<0||n>100)||Math.round(d.pHome)+Math.round(d.pDraw)+Math.round(d.pAway)!==100){status.textContent='Las tres probabilidades deben sumar exactamente 100%.';return}
+                  if(!window.supabase?.createClient){status.textContent='No se pudo cargar Supabase. Recarga la página e inténtalo de nuevo.';return}
+                  btn.disabled=true;btn.textContent='GUARDANDO…';status.textContent='Guardando en la base de datos…';
+                  try{
+                    const db=window.supabase.createClient('https://swzkzcolwbqkkcpiavae.supabase.co','sb_publishable_rwklpjmWZyM9rpumvM75MQ_JDfk1AQG');
+                    const {data:sessionData,error:sessionError}=await db.auth.getSession();
+                    if(sessionError)throw sessionError;
+                    if(!sessionData?.session)throw new Error('Inicia sesión primero desde ADMIN PARTIDOS con tu usuario de Authentication de Supabase.');
+                    const {data:rows,error:readError}=await db.from('poryfut_featured_matches').select('id,sort_order,updated_at').eq('active',true).order('sort_order',{ascending:true}).limit(20);
+                    if(readError)throw readError;
+                    const existing=rows||[];
+                    const highest=existing.reduce((n,r)=>Math.max(n,Number(r.sort_order)||0),0);
+                    const payload={league:'PARTIDO DESTACADO',date:[d.date,d.time].filter(Boolean).join(' · '),home:d.home,away:d.away,home_logo:d.homeLogo,away_logo:d.awayLogo,p_home:d.pHome,p_draw:d.pDraw,p_away:d.pAway,sort_order:highest+1,active:true};
+                    const {error:insertError}=await db.from('poryfut_featured_matches').insert(payload);
+                    if(insertError)throw insertError;
+                    if(existing.length>=4){
+                      const oldest=[...existing].sort((a,b)=>{const ta=Date.parse(a.updated_at||0)||0,tb=Date.parse(b.updated_at||0)||0;return ta-tb||(Number(a.sort_order)||0)-(Number(b.sort_order)||0)})[0];
+                      const {error:updateError}=await db.from('poryfut_featured_matches').update({active:false}).eq('id',oldest.id);
+                      if(updateError)throw new Error('El partido se insertó, pero no se pudo desactivar el más antiguo: '+updateError.message);
+                    }
+                    try{localStorage.setItem(KEY,JSON.stringify(d))}catch(storageError){console.warn('No se pudo guardar la copia local; Supabase sí recibió el partido.',storageError)}
+                    apply(d);status.textContent='¡Guardado en Supabase! La vista y el carrusel se actualizarán.';
+                    window.dispatchEvent(new Event('focus'));
+                  }catch(e){console.error('[PoryFut featured match save]',e);status.textContent='No se pudo guardar en Supabase: '+(e.message||'Error desconocido');}
+                  finally{btn.disabled=false;btn.textContent='GUARDAR Y ACTUALIZAR VISTA'}
+                 });
                  $('pf-admin-reset').addEventListener('click',()=>{fillForm(defaults);apply(defaults);try{localStorage.removeItem(KEY)}catch(e){}$('pf-admin-status').textContent='Se restauraron los datos de ejemplo.'});
                  $('pf-admin-export').addEventListener('click',()=>{const d=readForm(),blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='poryfut-partido-destacado.json';a.click();URL.revokeObjectURL(url);$('pf-admin-status').textContent='Se exportó el archivo JSON con los datos del formulario.'});
                  load();
